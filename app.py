@@ -97,5 +97,68 @@ def delete_account():
 
     return redirect(url_for("register"))
 
+def generate_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+@app.route('/room/<code>')
+def room(code):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    if code not in rooms:
+        return redirect(url_for("home"))
+
+    return render_template('room.html', room_code=code)
+
+
+@socketio.on('create_room')
+def handle_create_room(data):
+
+    code = generate_code()
+
+    while code in rooms:
+        code = generate_code()
+
+    rooms[code] = {
+        "members": []
+    }
+
+    emit('room_created', {"code": code})
+
+@socketio.on('send_message')
+def handle_send_message(data):
+
+    code = data["room"]
+    message = data["message"]
+    username = session.get("username", "Unknown")
+
+    if code not in rooms:
+        return
+
+    emit('new_message', {
+        "username": username,
+        "message": message
+    }, room=code)
+
+@socketio.on('join_room_event')
+def handle_join_room(data):
+
+    code = data['code']
+
+    if code not in rooms:
+        emit('join_error', {"error" : "Room not found"})
+        return
+
+    
+    join_room(code)
+
+    username = session.get("username", "Unknown")
+
+    rooms[code]["members"].append(username)
+
+    emit('user_joined', {"username": username}, room=code)
+
+
+
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
