@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+Chat Lobby
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/lobby.css') }}">
+{% endblock %}
+
+{% block body_class %}
+lobby-page
+{% endblock %}
+
+{% block body %}
+
+<h1>Chat Rooms</h1>
+
+<form method="POST" action="{{ url_for('delete_account') }}">
+    <button type="submit" class="delete-button">
+        Delete Account
+    </button>
+</form>
+
+<div class="lobby-container">
+
+    <div class="lobby-card">
+        <h2>Create Room</h2>
+        <p>Start a new room and share the code</p>
+        <button class="lobby-button" onclick="createRoom()">Create Room</button>
+        <div id="room-code-display"></div>
+    </div>
+
+    <div class="lobby-card">
+        <h2>Join Room</h2>
+        <p>Enter a code to join an existing room</p>
+        <input type="text" id="room-code-input" class="join-input" placeholder="ABCDE" maxlength="5">
+        <button class="lobby-button" onclick="joinRoom()">Join Room</button>
+        <div id="error-message"></div>
+    </div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/lobby.js') }}"></script>
+
+{% endblock %}

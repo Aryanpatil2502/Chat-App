@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}
+Login
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block body_class %}
+auth-page
+{% endblock %}
+
+{% block body %}
+
+<div class="auth-container">
+
+    <h1>Login</h1>
+
+    <form method="POST" action="{{ url_for('login') }}">
+
+        <input type="text" name="username" placeholder="Username" required>
+
+        <input type="password" name="password" placeholder="Password" required>
+
+        <button type="submit" class="auth-button">Login</button>
+
+    </form>
+
+    <p class="auth-switch">
+        Don't have an account?
+        <a href="{{ url_for('register') }}">Register</a>
+    </p>
+
+</div>
+
+{% endblock %}

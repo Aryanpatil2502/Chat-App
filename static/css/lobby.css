@@ -1,0 +1,93 @@
+.lobby-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.lobby-page h1 {
+    font-size: 2.4rem;
+    margin-bottom: 40px;
+}
+
+.lobby-container {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.lobby-card {
+    background-color: #1e1e1e;
+    border: 2px solid #333;
+    border-radius: 12px;
+    padding: 30px 35px;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.lobby-card h2 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.lobby-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.lobby-button {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #4a9eff;
+    color: white;
+    transition: background-color 0.15s ease;
+    width: 100%;
+}
+
+.lobby-button:hover {
+    background-color: #3a8ae5;
+}
+
+.join-input {
+    padding: 10px 14px;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background-color: #2a2a2a;
+    color: #f5f5f5;
+    width: 100%;
+    text-align: center;
+    text-transform: uppercase;
+    box-sizing: border-box;
+}
+
+.join-input:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+#room-code-display {
+    font-size: 1.6rem;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: #4a9eff;
+    margin-top: 10px;
+}
+
+#error-message {
+    color: #ff5c5c;
+    font-size: 0.9rem;
+    min-height: 1.2em;
+}
