@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.security import generate_password_hash, check_password_hash
-from database import init_db, add_user, get_user, delete_user
+from database import (init_db, add_user, get_user, delete_user, add_room, get_room, get_all_rooms)
 import random
 import string
 
@@ -16,13 +16,12 @@ socketio = SocketIO(app)
 
 init_db()
 
-rooms = {}
-
 @app.route('/')
 def home():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template('lobby.html')
+    rooms = get_all_rooms()
+    return render_template('lobby.html', rooms=rooms)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -38,11 +37,14 @@ def register():
             "auth/register.html",
             error="Passwords do not match"
         )
-        
+
     existing_user = get_user(username)
 
     if existing_user:
-        return redirect(url_for("register"))
+        return render_template(
+            "auth/register.html",
+            error="Username already exists"
+        )
 
     password_hash = generate_password_hash(password)
 
@@ -64,10 +66,7 @@ def login():
     if user is None:
         return redirect(url_for("register"))
 
-    if not check_password_hash(
-        user["password_hash"],
-        password
-    ):
+    if not check_password_hash(user["password_hash"], password):
         return "Invalid username or password"
 
     session["user_id"] = user["id"]
@@ -97,33 +96,63 @@ def delete_account():
 
     return redirect(url_for("register"))
 
-def generate_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+@app.route("/profile")
+def profile():
+ 
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+ 
+    user_id = session["user_id"]
+ 
+    hosted_rooms = get_hosted_rooms(user_id)
+    joined_rooms = get_joined_rooms(user_id)
+ 
+    return render_template(
+        "profile.html",
+        username=session.get("username"),
+        hosted_rooms=hosted_rooms,
+        joined_rooms=joined_rooms
+    )
 
 @app.route('/room/<code>')
 def room(code):
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    if code not in rooms:
+    room_row = get_room(code)
+
+    if room_row is None:
         return redirect(url_for("home"))
 
-    return render_template('room.html', room_code=code)
+    return render_template('room.html', room_code=code, room_name=room_row["room_name"])
 
 
 @socketio.on('create_room')
 def handle_create_room(data):
 
-    code = generate_code()
+    if "user_id" not in session:
+        emit('join_error', {"error": "Not logged in"})
+        return
 
-    while code in rooms:
-        code = generate_code()
+    room_name = data.get("name", "Untitled Room")
 
-    rooms[code] = {
-        "members": []
-    }
+    characters = string.ascii_uppercase + string.digits
 
-    emit('room_created', {"code": code})
+    while True:
+        room_code = ""
+
+        for i in range(5):
+            room_code += random.choice(characters)
+
+        if get_room(room_code) is None:
+            break
+
+    user_id = session["user_id"]
+
+    add_room(room_code, room_name, user_id)
+
+    emit('room_created', {"code": room_code})
+
 
 @socketio.on('send_message')
 def handle_send_message(data):
@@ -132,7 +161,7 @@ def handle_send_message(data):
     message = data["message"]
     username = session.get("username", "Unknown")
 
-    if code not in rooms:
+    if get_room(code) is None:
         return
 
     emit('new_message', {
@@ -145,16 +174,13 @@ def handle_join_room(data):
 
     code = data['code']
 
-    if code not in rooms:
-        emit('join_error', {"error" : "Room not found"})
+    if get_room(code) is None:
+        emit('join_error', {"error": "Room not found"})
         return
 
-    
     join_room(code)
 
     username = session.get("username", "Unknown")
-
-    rooms[code]["members"].append(username)
 
     emit('user_joined', {"username": username}, room=code)
 

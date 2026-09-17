@@ -6,9 +6,9 @@ socket.on('room_created', function(data) {
 
 
 function createRoom() {
-    socket.emit('create_room', {});
+    const name = prompt("Room name:") || "Untitled Room";
+    socket.emit('create_room', { name: name });
 }
-
 
 function joinRoom() {
     const code = document.getElementById("room-code-input").value.trim().toUpperCase();

@@ -17,6 +17,8 @@ lobby-page
 
 <h1>Chat Rooms</h1>
 
+<a href="{{ url_for('profile') }}" class="lobby-button">Profile</a>
+
 <form method="POST" action="{{ url_for('delete_account') }}">
     <button type="submit" class="delete-button">
         Delete Account
