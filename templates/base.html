@@ -14,11 +14,7 @@
 
 <body class="{% block body_class %}{% endblock %}">
 
-    {% if session.get("user_id") %}
-        <a href="{{ url_for('logout') }}" class="logout-button">
-            Logout
-        </a>
-    {% endif %}
+   
 
     {% block body %}{% endblock %}
 

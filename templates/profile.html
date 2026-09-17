@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}
+Profile
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block body_class %}
+profile-page
+{% endblock %}
+
+{% block body %}
+
+<h1>{{ username }}</h1>
+
+<div class="profile-actions">
+    <a href="{{ url_for('home') }}" class="lobby-button">Back to Lobby</a>
+    <a href="{{ url_for('logout') }}" class="lobby-button">Logout</a>
+    <form method="POST" action="{{ url_for('delete_account') }}" style="display: inline;">
+        <button type="submit" class="delete-button">Delete Account</button>
+    </form>
+</div>
+
+<div class="lobby-container">
+
+    <div class="lobby-card">
+        <h2>Hosted</h2>
+        {% if hosted_rooms %}
+            <ul class="room-plain-list">
+                {% for r in hosted_rooms %}
+                <li>
+                    <a href="{{ url_for('room', code=r['room_code']) }}">
+                        {{ r['room_name'] }} <span class="room-code-tag">({{ r['room_code'] }})</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You haven't created any rooms yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="lobby-card">
+        <h2>Joined</h2>
+        {% if joined_rooms %}
+            <ul class="room-plain-list">
+                {% for r in joined_rooms %}
+                <li>
+                    <a href="{{ url_for('room', code=r['room_code']) }}">
+                        {{ r['room_name'] }} <span class="room-code-tag">({{ r['room_code'] }})</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You haven't joined any rooms yet.</p>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}

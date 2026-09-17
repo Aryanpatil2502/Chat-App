@@ -15,6 +15,21 @@ socket.on('new_message', function(data) {
     appendMessage(data.username, data.message);
 });
 
+socket.on('chat_history', function(data) {
+    data.messages.forEach(function(m) {
+        appendMessage(m.username, m.message);
+    });
+});
+
+socket.on('room_deleted', function(data) {
+    alert("This room was deleted.");
+    window.location.href = "/";
+});
+
+socket.on('delete_error', function(data) {
+    alert(data.error);
+});
+
 
 function appendMessage(username, message) {
     const chatBox = document.getElementById("chat-box");
@@ -50,6 +65,14 @@ function sendMessage() {
     });
 
     input.value = "";
+}
+
+
+function deleteRoom() {
+    if (!confirm("Delete this room for everyone? This cannot be undone.")) {
+        return;
+    }
+    socket.emit('delete_room_event', { code: roomCode });
 }
 
 

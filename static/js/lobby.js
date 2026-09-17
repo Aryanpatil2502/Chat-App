@@ -6,7 +6,8 @@ socket.on('room_created', function(data) {
 
 
 function createRoom() {
-    const name = prompt("Room name:") || "Untitled Room";
+    const nameInput = document.getElementById("room-name-input");
+    const name = nameInput.value.trim() || "Untitled Room";
     socket.emit('create_room', { name: name });
 }
 

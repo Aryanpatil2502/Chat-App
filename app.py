@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room
 from werkzeug.security import generate_password_hash, check_password_hash
-from database import (init_db, add_user, get_user, delete_user, add_room, get_room, get_all_rooms)
+from database import (init_db, add_user, get_user, delete_user, add_room, get_room, get_all_rooms, add_member, get_hosted_rooms, get_joined_rooms, add_message, get_messages, delete_room)
 import random
 import string
 
@@ -96,23 +96,25 @@ def delete_account():
 
     return redirect(url_for("register"))
 
+
 @app.route("/profile")
 def profile():
- 
+
     if "user_id" not in session:
         return redirect(url_for("login"))
- 
+
     user_id = session["user_id"]
- 
+
     hosted_rooms = get_hosted_rooms(user_id)
     joined_rooms = get_joined_rooms(user_id)
- 
+
     return render_template(
         "profile.html",
         username=session.get("username"),
         hosted_rooms=hosted_rooms,
         joined_rooms=joined_rooms
     )
+
 
 @app.route('/room/<code>')
 def room(code):
@@ -124,7 +126,14 @@ def room(code):
     if room_row is None:
         return redirect(url_for("home"))
 
-    return render_template('room.html', room_code=code, room_name=room_row["room_name"])
+    is_creator = room_row["created_by"] == session["user_id"]
+
+    return render_template(
+        'room.html',
+        room_code=code,
+        room_name=room_row["room_name"],
+        is_creator=is_creator
+    )
 
 
 @socketio.on('create_room')
@@ -159,10 +168,13 @@ def handle_send_message(data):
 
     code = data["room"]
     message = data["message"]
+    user_id = session.get("user_id")
     username = session.get("username", "Unknown")
 
     if get_room(code) is None:
         return
+
+    add_message(code, user_id, username, message)
 
     emit('new_message', {
         "username": username,
@@ -180,10 +192,41 @@ def handle_join_room(data):
 
     join_room(code)
 
+    user_id = session.get("user_id")
+    if user_id:
+        add_member(code, user_id)
+
+    history = get_messages(code)
+    emit('chat_history', {
+        "messages": [
+            {"username": m["username"], "message": m["content"]}
+            for m in history
+        ]
+    })
+
     username = session.get("username", "Unknown")
 
     emit('user_joined', {"username": username}, room=code)
 
+
+@socketio.on('delete_room_event')
+def handle_delete_room(data):
+
+    code = data['code']
+    user_id = session.get("user_id")
+
+    if user_id is None:
+        emit('delete_error', {"error": "Not logged in"})
+        return
+
+    success = delete_room(code, user_id)
+
+    if not success:
+        emit('delete_error', {"error": "Only the creator can delete this room"})
+        return
+
+    # tell everyone currently in the room to leave, including the creator
+    emit('room_deleted', {"code": code}, room=code)
 
 
 if __name__ == '__main__':

@@ -31,12 +31,26 @@ def init_db():
         )
     """)
 
-    #Room members
+    #Room membership table 
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS room_members(
+        CREATE TABLE IF NOT EXISTS room_members (
         room_code TEXT NOT NULL,
         user_id INTEGER NOT NULL,
         PRIMARY KEY (room_code, user_id),
+        FOREIGN KEY (room_code) REFERENCES rooms(room_code),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    #Messages table 
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_code TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        username TEXT NOT NULL,
+        content TEXT NOT NULL,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (room_code) REFERENCES rooms(room_code),
         FOREIGN KEY (user_id) REFERENCES users(id)
         )
@@ -84,7 +98,7 @@ def delete_user(user_id):
     conn.commit()
     conn.close()
 
-def add_room(room_code,room_name,user_id):
+def add_room(room_code, room_name, user_id):
     conn = get_db()
 
     conn.execute(
@@ -104,7 +118,7 @@ def get_room(room_code):
 
     room = conn.execute(
         """
-        SELECT * FROM rooms 
+        SELECT * FROM rooms
         WHERE room_code = ?
         """,
         (room_code,)
@@ -114,38 +128,40 @@ def get_room(room_code):
 
     return room
 
+
 def get_all_rooms():
     conn = get_db()
- 
+
     rooms = conn.execute(
         """
         SELECT * FROM rooms
         ORDER BY id DESC
         """
     ).fetchall()
- 
+
     conn.close()
- 
+
     return rooms
+
 
 def add_member(room_code, user_id):
     conn = get_db()
 
     conn.execute(
         """
-        INSERT OR IGNORE INTO room_members (room_code , user_id)
-        VALUES (?,?)
+        INSERT OR IGNORE INTO room_members (room_code, user_id)
+        VALUES (?, ?)
         """,
-        (room_code,user_id)
+        (room_code, user_id)
     )
 
     conn.commit()
-    conn.exit()
+    conn.close()
 
 
 def get_hosted_rooms(user_id):
     conn = get_db()
- 
+
     rooms = conn.execute(
         """
         SELECT * FROM rooms
@@ -154,15 +170,15 @@ def get_hosted_rooms(user_id):
         """,
         (user_id,)
     ).fetchall()
- 
+
     conn.close()
- 
+
     return rooms
- 
- 
+
+
 def get_joined_rooms(user_id):
     conn = get_db()
- 
+
     rooms = conn.execute(
         """
         SELECT r.* FROM rooms r
@@ -172,8 +188,62 @@ def get_joined_rooms(user_id):
         """,
         (user_id, user_id)
     ).fetchall()
- 
+
     conn.close()
- 
+
     return rooms
 
+
+def add_message(room_code, user_id, username, content):
+    conn = get_db()
+
+    conn.execute(
+        """
+        INSERT INTO messages (room_code, user_id, username, content)
+        VALUES (?, ?, ?, ?)
+        """,
+        (room_code, user_id, username, content)
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def get_messages(room_code):
+    conn = get_db()
+
+    messages = conn.execute(
+        """
+        SELECT * FROM messages
+        WHERE room_code = ?
+        ORDER BY id ASC
+        """,
+        (room_code,)
+    ).fetchall()
+
+    conn.close()
+
+    return messages
+
+
+def delete_room(room_code, user_id):
+   
+    conn = get_db()
+ 
+    room = conn.execute(
+        "SELECT * FROM rooms WHERE room_code = ?",
+        (room_code,)
+    ).fetchone()
+ 
+    if room is None or room["created_by"] != user_id:
+        conn.close()
+        return False
+ 
+    conn.execute("DELETE FROM messages WHERE room_code = ?", (room_code,))
+    conn.execute("DELETE FROM room_members WHERE room_code = ?", (room_code,))
+    conn.execute("DELETE FROM rooms WHERE room_code = ?", (room_code,))
+ 
+    conn.commit()
+    conn.close()
+ 
+    return True

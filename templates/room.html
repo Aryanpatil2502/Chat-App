@@ -28,6 +28,12 @@ room-page
     Leave Room
 </a>
 
+{% if is_creator %}
+<button onclick="deleteRoom()" class="delete-button">
+    Delete Room
+</button>
+{% endif %}
+
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
     const roomCode = "{{ room_code }}";

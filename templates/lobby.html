@@ -15,21 +15,18 @@ lobby-page
 
 {% block body %}
 
+<a href="{{ url_for('profile') }}" class="profile-button">
+    Profile
+</a>
+
 <h1>Chat Rooms</h1>
-
-<a href="{{ url_for('profile') }}" class="lobby-button">Profile</a>
-
-<form method="POST" action="{{ url_for('delete_account') }}">
-    <button type="submit" class="delete-button">
-        Delete Account
-    </button>
-</form>
 
 <div class="lobby-container">
 
     <div class="lobby-card">
         <h2>Create Room</h2>
         <p>Start a new room and share the code</p>
+        <input type="text" id="room-name-input" class="join-input" placeholder="Room name">
         <button class="lobby-button" onclick="createRoom()">Create Room</button>
         <div id="room-code-display"></div>
     </div>
