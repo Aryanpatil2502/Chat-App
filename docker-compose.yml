@@ -1,0 +1,14 @@
+services:
+  chatapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - "5000:5000"
+
+    environment:
+      SECRET_KEY:
+
+    volumes:
+      - ./user.db:/app/user.db
