@@ -8,7 +8,7 @@ services:
       - "5000:5000"
 
     environment:
-      SECRET_KEY:
+      SECRET_KEY: ${SECRET_KEY}
 
     volumes:
-      - ./user.db:/app/user.db
+      - ./data:/app/data

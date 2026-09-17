@@ -1,7 +1,7 @@
 import sqlite3
 
 
-DB_PATH = "user.db"
+DB_PATH = "/app/data/user.db"
 
 
 def get_db():
