@@ -18,7 +18,7 @@ profile-page
 <h1>{{ username }}</h1>
 
 <div class="profile-actions">
-    <a href="{{ url_for('home') }}" class="lobby-button">Back to Lobby</a>
+    <a href="{{ url_for('lobby') }}" class="lobby-button">Back to Lobby</a>
     <a href="{{ url_for('logout') }}" class="lobby-button">Logout</a>
     <form method="POST" action="{{ url_for('delete_account') }}" style="display: inline;">
         <button type="submit" class="delete-button">Delete Account</button>
@@ -33,7 +33,7 @@ profile-page
             <ul class="room-plain-list">
                 {% for r in hosted_rooms %}
                 <li>
-                    <a href="{{ url_for('room', code=r['room_code']) }}">
+                    <a href="{{ url_for('room', room_code=r['room_code']) }}">
                         {{ r['room_name'] }} <span class="room-code-tag">({{ r['room_code'] }})</span>
                     </a>
                 </li>
@@ -50,7 +50,7 @@ profile-page
             <ul class="room-plain-list">
                 {% for r in joined_rooms %}
                 <li>
-                    <a href="{{ url_for('room', code=r['room_code']) }}">
+                    <a href="{{ url_for('room', room_code=r['room_code']) }}">
                         {{ r['room_name'] }} <span class="room-code-tag">({{ r['room_code'] }})</span>
                     </a>
                 </li>

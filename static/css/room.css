@@ -109,3 +109,109 @@
     background-color: #ff6b6b;
     color: #1e1e1e;
 }
+
+.leave-button {
+    margin-top: 12px;
+    padding: 8px 20px;
+    font-size: 0.95rem;
+    color: #cfcfcf;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.leave-button:hover {
+    background-color: #2a2a2a;
+    color: #ffffff;
+}
+
+.room-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.chat-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.members-panel,
+.requests-panel {
+    width: 220px;
+    background-color: #1e1e1e;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.requests-panel {
+    width: 500px;
+    max-width: 90vw;
+    margin-bottom: 20px;
+}
+
+.members-panel h3,
+.requests-panel h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: #cfcfcf;
+}
+
+.members-list,
+.requests-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.members-list li,
+.requests-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background-color: #2a2a2a;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.kick-button,
+.accept-button,
+.reject-button {
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.accept-button {
+    background-color: #3ba55d;
+    color: #fff;
+}
+
+.kick-button,
+.reject-button {
+    background-color: #ff6b6b;
+    color: #1e1e1e;
+}
+
+.empty-note {
+    color: #888;
+    font-size: 0.85rem;
+    font-style: italic;
+    margin: 8px 0 0;
+}
+
+.room-code-tag {
+    color: #888;
+    font-size: 0.8em;
+}

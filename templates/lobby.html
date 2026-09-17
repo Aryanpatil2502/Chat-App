@@ -21,6 +21,11 @@ lobby-page
 
 <h1>Chat Rooms</h1>
 
+<div class="requests-panel" id="requests-panel" style="display:none;">
+    <h3>Join requests</h3>
+    <ul class="requests-list" id="requests-list"></ul>
+</div>
+
 <div class="lobby-container">
 
     <div class="lobby-card">
@@ -28,7 +33,7 @@ lobby-page
         <p>Start a new room and share the code</p>
         <input type="text" id="room-name-input" class="join-input" placeholder="Room name">
         <button class="lobby-button" onclick="createRoom()">Create Room</button>
-        <div id="room-code-display"></div>
+        <div id="room-code-display" class="lobby-status"></div>
     </div>
 
     <div class="lobby-card">
@@ -36,7 +41,7 @@ lobby-page
         <p>Enter a code to join an existing room</p>
         <input type="text" id="room-code-input" class="join-input" placeholder="ABCDE" maxlength="5">
         <button class="lobby-button" onclick="joinRoom()">Join Room</button>
-        <div id="error-message"></div>
+        <div id="error-message" class="lobby-status"></div>
     </div>
 
 </div>

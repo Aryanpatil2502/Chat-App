@@ -15,28 +15,86 @@ room-page
 
 {% block body %}
 
-<h1>Room: {{ room_code }}</h1>
+<h1>{{ room_name }} <span class="room-code-tag">({{ room_code }})</span></h1>
 
-<div class="chat-box" id="chat-box"></div>
+{% if is_creator %}
+<div class="requests-panel" id="requests-panel">
+    <h3>Join requests</h3>
+    <ul class="requests-list" id="requests-list">
+        {% for req in pending_requests %}
+        <li data-request-id="{{ req['id'] }}">
+            <span>{{ req['username'] }}</span>
+            <button class="accept-button"
+                    onclick="handleRequest({{ req['id'] }}, 'accept')">Accept</button>
+            <button class="reject-button"
+                    onclick="handleRequest({{ req['id'] }}, 'reject')">Reject</button>
+        </li>
+        {% endfor %}
+    </ul>
+    <p class="empty-note" id="requests-empty"
+       {% if pending_requests %}style="display:none;"{% endif %}>
+        No pending requests.
+    </p>
+</div>
+{% endif %}
 
-<div class="message-input-container">
-    <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-    <button onclick="sendMessage()">Send</button>
+<div class="room-layout">
+
+    <div class="chat-column">
+
+        <div class="chat-box" id="chat-box">
+            {% for m in messages %}
+            <div class="message">
+                <strong>{{ m['username'] }}:</strong> {{ m['message'] }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="message-input-container">
+            <input type="text" id="message-input"
+                   placeholder="Type a message..." autocomplete="off">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+    </div>
+
+    <div class="members-panel">
+        <h3>Members</h3>
+        <ul class="members-list" id="members-list">
+            {% for member in members %}
+            <li data-user-id="{{ member['id'] }}">
+                <span>{{ member['username'] }}</span>
+                {% if is_creator and member['id'] != creator_id %}
+                <button class="kick-button"
+                        onclick="kickMember({{ member['id'] }})">Kick</button>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
 </div>
 
-<a href="{{ url_for('home') }}" class="home-button">
-    Leave Room
+<a href="{{ url_for('lobby') }}" class="home-button">
+    Go back
 </a>
 
 {% if is_creator %}
 <button onclick="deleteRoom()" class="delete-button">
     Delete Room
 </button>
+{% else %}
+<button onclick="leaveRoom()" class="leave-button">
+    Leave Room
+</button>
 {% endif %}
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    const roomCode = "{{ room_code }}";
+    const roomCode  = {{ room_code | tojson }};
+    const myUserId  = {{ user_id | tojson }};
+    const creatorId = {{ creator_id | tojson }};
+    const isCreator = {{ is_creator | tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/room.js') }}"></script>
 

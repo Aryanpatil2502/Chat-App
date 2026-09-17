@@ -10,6 +10,8 @@ def get_db():
 
     conn.row_factory = sqlite3.Row
 
+    conn.execute("PRAGMA foreign_keys = ON")
+
     return conn
 
 
@@ -21,9 +23,21 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL
+            password_hash TEXT NOT NULL,
+            deleted_at TIMESTAMP DEFAULT NULL
         )
     """)
+
+    existing_columns = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(users)").fetchall()
+    }
+
+    if "deleted_at" not in existing_columns:
+
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN deleted_at TIMESTAMP DEFAULT NULL"
+        )
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS rooms(
@@ -74,10 +88,6 @@ def init_db():
     conn.close()
 
 
-# --------------------------------------------------
-# USERS
-# --------------------------------------------------
-
 def add_user(username, password_hash):
 
     conn = get_db()
@@ -104,6 +114,7 @@ def get_user(username):
         SELECT *
         FROM users
         WHERE username = ?
+        AND deleted_at IS NULL
         """,
         (username,)
     ).fetchone()
@@ -119,8 +130,29 @@ def delete_user(user_id):
 
     conn.execute(
         """
-        DELETE FROM users
+        UPDATE users
+
+        SET username = 'deleted_user_' || id,
+            password_hash = '',
+            deleted_at = CURRENT_TIMESTAMP
+
         WHERE id = ?
+        """,
+        (user_id,)
+    )
+
+    conn.execute(
+        """
+        DELETE FROM room_members
+        WHERE user_id = ?
+        """,
+        (user_id,)
+    )
+
+    conn.execute(
+        """
+        DELETE FROM room_requests
+        WHERE user_id = ?
         """,
         (user_id,)
     )
@@ -130,9 +162,6 @@ def delete_user(user_id):
     conn.close()
 
 
-# --------------------------------------------------
-# ROOMS
-# --------------------------------------------------
 
 def add_room(room_code, room_name, user_id):
 
@@ -230,10 +259,6 @@ def delete_room(room_code):
     return True
 
 
-# --------------------------------------------------
-# ROOM MEMBERS
-# --------------------------------------------------
-
 def add_room_member(room_code, user_id):
 
     conn = get_db()
@@ -287,7 +312,10 @@ def get_room_members(room_code):
         """
         SELECT
             users.id,
-            users.username
+            CASE
+                WHEN users.deleted_at IS NOT NULL THEN '[deleted user]'
+                ELSE users.username
+            END AS username
 
         FROM room_members
 
@@ -358,10 +386,6 @@ def is_room_member(room_code, user_id):
     return member is not None
 
 
-# --------------------------------------------------
-# MESSAGES
-# --------------------------------------------------
-
 def add_message(room_code, user_id, message):
 
     conn = get_db()
@@ -391,7 +415,10 @@ def get_messages(room_code):
     messages = conn.execute(
         """
         SELECT
-            users.username,
+            CASE
+                WHEN users.deleted_at IS NOT NULL THEN '[deleted user]'
+                ELSE users.username
+            END AS username,
             messages.message,
             messages.created_at
 
@@ -413,11 +440,6 @@ def get_messages(room_code):
     conn.close()
 
     return messages
-
-
-# --------------------------------------------------
-# JOIN REQUESTS
-# --------------------------------------------------
 
 def add_room_request(room_code, user_id):
 

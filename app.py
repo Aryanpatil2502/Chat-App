@@ -52,27 +52,17 @@ from database import (
 )
 
 
-# --------------------------------------------------
-# APP SETUP
-# --------------------------------------------------
 
 load_dotenv()
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("SECRET_KEY")
+app.secret_key = os.environ.get("SECRET_KEY", os.urandom(32))
 
 socketio = SocketIO(app)
 
+init_db()
 
-# --------------------------------------------------
-# CONNECT
-# --------------------------------------------------
-# Every client joins a private room keyed to their own user id the
-# moment they connect - not just once they open a specific chat room.
-# This is what lets us push "someone wants to join your room" or
-# "you've been kicked" to a user regardless of which page they're on
-# (e.g. still sitting in the lobby, not inside any room yet).
 
 @socketio.on("connect")
 def handle_connect():
@@ -86,9 +76,6 @@ def handle_connect():
     join_room(f"user_{user_id}")
 
 
-# --------------------------------------------------
-# LOBBY
-# --------------------------------------------------
 
 @app.route("/")
 def lobby():
@@ -100,16 +87,12 @@ def lobby():
     return render_template("lobby.html")
 
 
-# --------------------------------------------------
-# LOGIN
-# --------------------------------------------------
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
     if request.method == "GET":
 
-        return render_template("login.html")
+        return render_template("auth/login.html")
 
     username = request.form["username"]
     password = request.form["password"]
@@ -118,10 +101,17 @@ def login():
 
     if user is None:
 
-        return redirect(url_for("register"))
+        return render_template(
+            "auth/login.html",
+            error="Invalid username or password"
+        )
 
     if not check_password_hash(user["password_hash"], password):
-        return "Invalid username or password"
+
+        return render_template(
+            "auth/login.html",
+            error="Invalid username or password"
+        )
 
     session["user_id"] = user["id"]
 
@@ -130,16 +120,12 @@ def login():
     return redirect(url_for("lobby"))
 
 
-# --------------------------------------------------
-# REGISTER
-# --------------------------------------------------
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
     if request.method == "GET":
 
-        return render_template("register.html")
+        return render_template("auth/register.html")
 
     username = request.form["username"]
 
@@ -150,7 +136,7 @@ def register():
     if password != confirm_password:
 
         return render_template(
-            "register.html",
+            "auth/register.html",
             error="Passwords do not match"
         )
 
@@ -159,7 +145,7 @@ def register():
     if existing_user:
 
         return render_template(
-            "register.html",
+            "auth/register.html",
             error="Username already exists"
         )
 
@@ -173,10 +159,6 @@ def register():
     return redirect(url_for("login"))
 
 
-# --------------------------------------------------
-# LOGOUT
-# --------------------------------------------------
-
 @app.route("/logout")
 def logout():
 
@@ -184,10 +166,6 @@ def logout():
 
     return redirect(url_for("login"))
 
-
-# --------------------------------------------------
-# DELETE ACCOUNT
-# --------------------------------------------------
 
 @app.route("/delete-account", methods=["POST"])
 def delete_account():
@@ -204,10 +182,6 @@ def delete_account():
 
     return redirect(url_for("register"))
 
-
-# --------------------------------------------------
-# CREATE ROOM
-# --------------------------------------------------
 
 @socketio.on("create_room")
 def create_room_event(room_name):
@@ -254,9 +228,6 @@ def create_room_event(room_name):
     }
 
 
-# --------------------------------------------------
-# JOIN ROOM
-# --------------------------------------------------
 
 @socketio.on("join_room")
 def join_existing_room(room_code):
@@ -281,7 +252,6 @@ def join_existing_room(room_code):
             "error": "Room does not exist"
         }
 
-    # Already a member
     if is_room_member(
         room_code,
         user_id
@@ -311,7 +281,6 @@ def join_existing_room(room_code):
             "room_code": room_code
         }
 
-    # Creator
     if room["created_by"] == user_id:
 
         add_room_member(
@@ -326,7 +295,6 @@ def join_existing_room(room_code):
             "room_code": room_code
         }
 
-    # Normal user needs approval
     request_id = add_room_request(
         room_code,
         user_id
@@ -357,9 +325,6 @@ def join_existing_room(room_code):
     }
 
 
-# --------------------------------------------------
-# ROOM PAGE
-# --------------------------------------------------
 
 @app.route("/room/<room_code>")
 def room(room_code):
@@ -408,13 +373,14 @@ def room(room_code):
 
         creator_id=room_data["created_by"],
 
+        is_creator=(room_data["created_by"] == user_id),
+
+        user_id=user_id,
+
         pending_requests=pending_requests
     )
 
 
-# --------------------------------------------------
-# SEND MESSAGE
-# --------------------------------------------------
 
 @socketio.on("send_message")
 def send_message(data):
@@ -432,8 +398,6 @@ def send_message(data):
 
     user_id = session["user_id"]
 
-    # Security check:
-    # user must actually be a member
     if not is_room_member(
         room_code,
         user_id
@@ -471,10 +435,6 @@ def send_message(data):
     }
 
 
-# --------------------------------------------------
-# DELETE ROOM
-# --------------------------------------------------
-
 @socketio.on("delete_room")
 def delete_room_event(room_code):
 
@@ -494,7 +454,6 @@ def delete_room_event(room_code):
             "error": "Room does not exist"
         }
 
-    # Only creator
     if room["created_by"] != session["user_id"]:
 
         return {
@@ -514,9 +473,72 @@ def delete_room_event(room_code):
     }
 
 
-# --------------------------------------------------
-# KICK MEMBER
-# --------------------------------------------------
+@socketio.on("leave_room")
+def leave_room_event(room_code):
+
+    if "user_id" not in session:
+
+        return {
+            "success": False,
+            "error": "Not logged in"
+        }
+
+    user_id = session["user_id"]
+
+    room = get_room(room_code)
+
+    if room is None:
+
+        return {
+            "success": False,
+            "error": "Room does not exist"
+        }
+
+    if not is_room_member(
+        room_code,
+        user_id
+    ):
+
+        return {
+            "success": False,
+            "error": "You are not a member of this room"
+        }
+
+    if room["created_by"] == user_id:
+
+        return {
+            "success": False,
+            "error": "Creator cannot leave the room. Delete it instead."
+        }
+
+    remove_room_member(
+        room_code,
+        user_id
+    )
+
+    leave_room(room_code)
+
+    members = get_room_members(room_code)
+
+    socketio.emit(
+        "room_members",
+        {
+            "members": [
+                {
+                    "id": member["id"],
+                    "username": member["username"]
+                }
+
+                for member in members
+            ]
+        },
+        to=room_code
+    )
+
+    return {
+        "success": True
+    }
+
 
 @socketio.on("kick_member")
 def kick_member(data):
@@ -541,7 +563,6 @@ def kick_member(data):
             "error": "Room does not exist"
         }
 
-    # Only creator can kick
     if room["created_by"] != session["user_id"]:
 
         return {
@@ -549,7 +570,6 @@ def kick_member(data):
             "error": "Only the creator can kick members"
         }
 
-    # Creator cannot kick themselves
     if user_id == room["created_by"]:
 
         return {
@@ -557,7 +577,6 @@ def kick_member(data):
             "error": "Creator cannot be kicked"
         }
 
-    # Check target is actually a member
     if not is_room_member(
         room_code,
         user_id
@@ -573,8 +592,7 @@ def kick_member(data):
         user_id
     )
 
-    # Notify the kicked user directly via their personal room -
-    # works no matter which page they're currently on
+
     socketio.emit(
         "kicked",
         {
@@ -583,7 +601,6 @@ def kick_member(data):
         to=f"user_{user_id}"
     )
 
-    # Update member list for everyone still inside
     members = get_room_members(room_code)
 
     socketio.emit(
@@ -606,9 +623,6 @@ def kick_member(data):
     }
 
 
-# --------------------------------------------------
-# HANDLE JOIN REQUEST
-# --------------------------------------------------
 
 @socketio.on("handle_join_request")
 def handle_join_request(data):
@@ -635,7 +649,7 @@ def handle_join_request(data):
             "error": "Request does not exist"
         }
 
-    # Only creator can accept/reject
+
     if request_data["created_by"] != session["user_id"]:
 
         return {
@@ -650,7 +664,7 @@ def handle_join_request(data):
             "error": "Request has already been handled"
         }
 
-    # ACCEPT
+ 
     if action == "accept":
 
         add_room_member(
@@ -694,7 +708,7 @@ def handle_join_request(data):
             "success": True
         }
 
-    # REJECT
+
     if action == "reject":
 
         update_room_request(
@@ -720,10 +734,6 @@ def handle_join_request(data):
     }
 
 
-# --------------------------------------------------
-# PROFILE
-# --------------------------------------------------
-
 @app.route("/profile")
 def profile():
 
@@ -731,24 +741,29 @@ def profile():
 
         return redirect(url_for("login"))
 
-    rooms = get_user_rooms(
-        session["user_id"]
-    )
+    user_id = session["user_id"]
+
+    rooms = get_user_rooms(user_id)
+
+    hosted_rooms = [
+        room for room in rooms
+        if room["created_by"] == user_id
+    ]
+
+    joined_rooms = [
+        room for room in rooms
+        if room["created_by"] != user_id
+    ]
 
     return render_template(
         "profile.html",
         username=session["username"],
-        rooms=rooms
+        hosted_rooms=hosted_rooms,
+        joined_rooms=joined_rooms
     )
 
 
-# --------------------------------------------------
-# RUN APP
-# --------------------------------------------------
-
 if __name__ == "__main__":
-
-    init_db()
 
     socketio.run(
         app,
