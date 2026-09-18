@@ -181,7 +181,7 @@ docker --version
 docker compose version
 ```
 
-## Ubuntu / Kubuntu
+## Ubuntu 
 
 Install Docker Engine and Docker Compose:
 
@@ -211,32 +211,7 @@ sudo docker compose up --build
 
 ---
 
-## Arch Linux / CachyOS
 
-Install Docker Engine and Docker Compose:
-
-```bash
-sudo pacman -S docker docker-compose
-```
-
-Start Docker:
-
-```bash
-sudo systemctl enable --now docker
-```
-
-Verify:
-
-```bash
-docker --version
-docker compose version
-```
-
-If Docker requires `sudo`, use:
-
-```bash
-sudo docker compose up --build
-```
 
 ---
 
