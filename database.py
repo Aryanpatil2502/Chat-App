@@ -1,10 +1,14 @@
+from pathlib import Path
 import sqlite3
 
 
-DB_PATH = "/app/data/user.db"
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = BASE_DIR / "data" / "user.db"
 
 
 def get_db():
+
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(DB_PATH)
 
