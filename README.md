@@ -82,7 +82,7 @@ Make sure `.env` is included in `.gitignore`:
 ## 1. Clone the repository
 
 ```bash
-git clone <https://github.com/Aryanpatil2502/Chat-App>
+git clone https://github.com/Aryanpatil2502/Chat-App
 cd Chat-App
 ```
 
@@ -121,7 +121,7 @@ docker compose down
 ## 1. Clone the repository
 
 ```bash
-git clone <https://github.com/Aryanpatil2502/Chat-App>
+git clone https://github.com/Aryanpatil2502/Chat-App
 cd Chat-App
 ```
 
@@ -311,58 +311,3 @@ You do not need to manually create the database if it does not already exist. Th
 When running the application with Docker, make sure the Docker volume configured in `compose.yaml` is not deleted if you want to preserve your existing database.
 
 ---
-
-# Quick Start
-
-## Docker
-
-```bash
-git clone <https://github.com/Aryanpatil2502/Chat-App>
-cd Chat-App
-```
-
-Create `.env`:
-
-```env
-SECRET_KEY="your-secret-key-here"
-```
-
-Then:
-
-```bash
-docker compose up --build
-```
-
-Open:
-
-```text
-http://localhost:5000
-```
-
----
-
-## uv
-
-```bash
-git clone <https://github.com/Aryanpatil2502/Chat-App>
-cd Chat-App
-```
-
-Create `.env`:
-
-```env
-SECRET_KEY="your-secret-key-here"
-```
-
-Then:
-
-```bash
-uv sync
-uv run app.py
-```
-
-Open:
-
-```text
-http://localhost:5000
-```
